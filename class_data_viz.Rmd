@@ -19,8 +19,7 @@ library(paletteer)
 library(ggExtra)
 library(ggbeeswarm)
 library(gapminder)
-
-# library(sf)
+library(sf)
 ```
 
 ### Read in Lizard data
@@ -105,5 +104,132 @@ ggplot(lizards, aes(x = total_length, y = weight)) +
 #       subtitle = "All lizards follow standars length-weight relationship, with Western Whiptails being largest.",
 #       caption = "Data: Jornada Basin LTER, CCBY")
 
+```
+
+
+### Fun with scales
+
+#### Change gradient colors
+```{r}
+ggplot(lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = weight)) +
+  scale_color_gradient(low = "purple", high = "orange")   # changing the gradient
+```
+
+#### Specify gradient range
+```{r}
+ggplot(lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = weight)) +
+  scale_color_gradientn(colors = c("magenta", "cyan4", "darkorchid3", "dodgerblue")) # add a range for colors
+```
+
+#### Color range in bins
+```{r}
+ggplot(lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = weight)) +
+  scale_color_steps(low = "red", high = "black") # Sets colors into bins
+```
+
+#### Diverging color scheme
+```{r}
+ggplot(lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = total_length)) +
+  scale_color_steps2(low = "purple",
+                     mid = "white",
+                     high = "orange",
+                     midpoint = 150,
+                     breaks = c(50, 75, 150, 180, 220, 280)) # Diverging color scheme
+```
+
+#### Manually set color sequences
+```{r}
+ggplot(lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = total_length)) +
+  scale_color_stepsn(colors = c("orange", "red", "purple"),
+                     breaks = seq(from = 0, 
+                                  to = 300, 
+                                  by = 60)) # Create equal length
+```
+
+### Pallets
+
+#### Discrete color pallets
+```{r}
+glimpse(palettes_d_names)
+```
+
+#### Reorder factors
+```{r}
+ggplot(lizards, aes(y = common_name, x = total_length)) +
+  geom_boxplot(aes(fill = common_name))
+
+lizards_med <- lizards |> 
+  mutate(common_name = fct_reorder(common_name, total_length, .fun = median)) #reorder common_name by median of total_length
+
+ggplot(lizards_med, aes(y = common_name, x = total_length)) +
+  geom_boxplot(aes(fill = common_name), show.legend = FALSE) +
+  scale_fill_paletteer_d(palette = "ggsci::planetexpress_futurama") + #from what package, and what pallet name
+  theme_minimal()
+```
+
+#### Themes: Make a terrible graph
+##### Add custom annotation
+```{r}
+ggplot(lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = weight)) +
+  theme(panel.grid.major.x = element_line(color = "red"), #hyper customization
+        panel.grid.minor.y = element_blank(),
+        axis.title.x = element_text(color = "purple", size = 10),
+        axis.text.y = element_text(color = "green"),
+        text = element_text(size = 18),
+        panel.background = element_rect(color = "purple", fill = "violet")) +
+  annotate("text", x = 300, y = 50, label = "Wooo", color = "blue") + # type of addition, where, what
+  geom_vline(xintercept = 250, linetype = "dashed", color = "orange", size = 4)
+  
+```
+
+### `ggrepel` Labels
+```{r}
+wws_lizards <- lizards |> 
+  filter(common_name == "western whiptail",
+         site == "sand")
+
+ggplot(wws_lizards, aes(x = total_length, y = weight)) +
+  geom_point() +
+  geom_text(aes(label = toe_num)) # built in: obnoxious, auto centers label over point
+
+ggplot(wws_lizards, aes(x = total_length, y = weight)) +
+  geom_point() +
+  geom_text_repel(aes(label = toe_num))
+```
+
+```{r}
+gapminder |> 
+  filter(year == 2002,
+         continent == "Europe") |> 
+  ggplot(aes(x = gdpPercap, y = lifeExp)) +
+  geom_point(aes(color = country), show.legend = FALSE) +
+  geom_text_repel(aes(label = country), size = 3)
+
+```
+
+### Highlight
+
+```{r}
+ggplot(lizards, aes(x = total_length, y = weight)) +
+  geom_point() +
+  gghighlight(weight > 30, label_key = toe_num)
+```
+
+### Map
+```{r}
+jornada_veg <- read_sf(here("data_raw", "spatial_vegetation", "doc.kml"))
+
+ggplot() +
+  geom_sf(data = jornada_veg,
+          aes(fill = Name),
+          color = NA) +  # removes outlines
+  theme_minimal() +
+  scale_fill_paletteer_d(palette = "ggthemes::manyeys")
 ```
 
