@@ -233,3 +233,50 @@ ggplot() +
   scale_fill_paletteer_d(palette = "ggthemes::manyeys")
 ```
 
+### Heatmap
+
+```{r}
+lizard_counts <- lizards |> 
+  mutate(date = lubridate::mdy(date)) |> ## Updating date column
+  count(year = lubridate::year(date), # Count by year and common name
+        common_name) |> 
+  drop_na() 
+
+ggplot(lizard_counts, aes(x = year, y = common_name)) +
+  geom_tile(aes(fill = n), show.legend = FALSE) +
+  geom_text(aes(label = n), color = "white", size = 3) +
+  scale_fill_gradientn(colors = c("navy", "red", "orange")) +
+  theme_minimal()
+```
+
+### Beeswarm Plot
+good for confined number of observations
+
+```{r}
+whiptails <- lizards |> 
+  filter(common_name == "western whiptail") |> 
+  drop_na(total_length, weight) # Drops only if total weight or length is NA
+
+whip_b_plot <- ggplot(data = whiptails, aes(x = sex, y = weight)) +
+  geom_beeswarm(color = "purple") +
+  geom_boxplot(fill = NA)
+```
+
+### Marginal Plot
+
+```{r}
+whiptail_plot <- ggplot(data = whiptails, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = sex), shape = 6) +
+  theme(legend.position = "bottom")
+
+ggMarginal(whiptail_plot, type = "boxplot", groupColour = TRUE)
+```
+
+
+### Patchwork
+
+```{r}
+((whip_b_plot + whiptail_plot) / whiptail_plot) + whip_b_plot & theme_dark()
+
+```
+
